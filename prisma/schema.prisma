@@ -1,0 +1,109 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"
+  url = env("DATABASE_URL") }
+
+enum Role { CLIENT PRO ADMIN }
+enum Plan { FREE PRO PREMIUM }
+enum QuoteStatus { PENDING ACCEPTED DECLINED DONE }
+
+model User {
+  id String @id @default(cuid())
+  name String
+  email String @unique
+  passwordHash String
+  role Role @default(CLIENT)
+  createdAt DateTime @default(now())
+  professional Professional?
+  quotes Quote[]
+  favorites Favorite[]
+  reviews Review[]
+  reports Report[]
+}
+model City { id String @id @default(cuid())
+  name String
+  state String
+  slug String @unique
+  pros Professional[] }
+model Category { id String @id @default(cuid())
+  name String
+  slug String @unique
+  pros Professional[] }
+model Professional {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category Category @relation(fields: [categoryId], references: [id])
+  cityId String
+  city City @relation(fields: [cityId], references: [id])
+  neighborhood String @default("")
+  bio String @default("")
+  whatsapp String
+  photoUrl String?
+  portfolio String[]
+  approved Boolean @default(false)
+  plan Plan @default(FREE)
+  views Int @default(0)
+  createdAt DateTime @default(now())
+  quotes Quote[]
+  favorites Favorite[]
+  reviews Review[]
+  reports Report[]
+  subscriptions Subscription[]
+  @@index([cityId, categoryId, approved])
+}
+model Quote {
+  id String @id @default(cuid())
+  clientId String
+  client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  proId String
+  pro Professional @relation(fields: [proId], references: [id], onDelete: Cascade)
+  message String
+  scheduledAt DateTime?
+  status QuoteStatus @default(PENDING)
+  createdAt DateTime @default(now())
+}
+model Favorite {
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proId String
+  pro Professional @relation(fields: [proId], references: [id], onDelete: Cascade)
+  @@id([userId, proId])
+}
+model Review {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proId String
+  pro Professional @relation(fields: [proId], references: [id], onDelete: Cascade)
+  rating Int
+  comment String
+  hidden Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@unique([userId, proId])
+}
+model Report {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proId String
+  pro Professional @relation(fields: [proId], references: [id], onDelete: Cascade)
+  reason String
+  createdAt DateTime @default(now())
+}
+model Subscription {
+  id String @id @default(cuid())
+  proId String
+  pro Professional @relation(fields: [proId], references: [id], onDelete: Cascade)
+  plan Plan
+  mpId String @unique
+  status String
+  createdAt DateTime @default(now())
+}
+model AuditLog {
+  id String @id @default(cuid())
+  actorId String
+  action String
+  detail String
+  createdAt DateTime @default(now())
+}
